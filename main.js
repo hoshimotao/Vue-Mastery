@@ -13,13 +13,6 @@ Vue.component("product-review", {
 })
 
 
-
-
-
-
-
-
-
 Vue.component("productDetails", {
     props: {
       details: {
