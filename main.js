@@ -1,64 +1,140 @@
-var eventBus = new Vue()
+var eventBus = new Vue();
 
-Vue.component("product-tabs", {
+// PRODUCT COMPONENT
+Vue.component("product", {
   props: {
-    reviews: {
-      type: Array,
-      required: true
+    premium: {
+      type: Boolean,
+      required: true,
     },
-    details: {
-      type: Array,
-      required: true
-    }
   },
+
+  // TEMPLATE LITERAL
   template: `
-    <div> 
-    <span class="tab"
-      :class="{ activeTab: selectedTab === tab}"
-      v-for="(tab, index) in tabs"
-      :key="index"
-      @click="selectedTab = tab">
-        {{ tab }} 
+    <div class="product">
+      <div class="product-image">
+        <a :href="image_link"><img :src="image" :alt="description" /></a>
+      </div>
+
+      <!-- Product Title and Stock -->
+
+      <div class="product-info">
+
         
-    </span>
 
+        <h1>{{ title }}</h1>
 
-    <div v-show="selectedTab === 'Reviews'">
-    <h2> Reviews </h2>
-    <p v-if="!reviews.length"> There are no reviews yet. </p>
-      <ul v-else>
-        <li v-for="(review, index) in reviews" :key="index"> 
-        <p> User: {{ review.name }}</p>
-        <p>Rating: {{ review.rating }} Stars </p>
-        <p>{{ review.review }}</p>
-        <p> Recommended: {{ review.recommend }}</p>
-        </li>
-      </ul>
+        <p v-if="inStock"> In Stock </p>
+        <p v-else :class="{outOfStock: !inStock }"> Out of Stock </p>  
+
+        <!-- Color Choice Boxes -->
+
+        <div v-for="(variant, index) in variants" 
+          :key="variant.variantId" class="color-box cursorHover"
+          :style="{ backgroundColor: variant.variantColor }" @mouseover="updateProduct(index)">
+
+        </div>
+
+        <!-- BUTTON + LISTENER -->
+
+        <button @click="removeFromCart" style="background-color: red;"> Remove </button>
+        <button @click="addToCart" :disabled="!inStock" :cflass="{disabledButton: !inStock }"> Add to Cart </button>
+      
+        <product-tabs :reviews="reviews" :details="details" :premium="premium"></product-tabs>    
+
+      </div>
     </div>
-
-    <ul v-show="selectedTab === 'Product Details'">
-    <li v-for="detail in details"> {{ detail }} </li>
-    </ul>
-
-   
-
-    <product-review v-show="selectedTab === 'Make a Review'"> </product-review> 
-
-
-    </div>
-
-
-  `,
+    `,
+  // ADD DATA AS AN OBJECT(FUNCTION)
   data() {
+    // MUST RETURN SOMETHING TO THE COMPONENT TO RENDER
     return {
-      tabs: ["Reviews", "Make a Review", "Shipping", "Product Details"],
-      selectedTab: "Reviews",
+      brand: "Vue Mastery",
+      product: "Socks",
+      description: "Green Socks",
+      selectedVariant: 0,
+      image_link:
+        "https://www.vuemastery.com/images/challenges/vmSocks-green-onWhite.jpg",
+      inventory: 90,
+      details: ["80% cotton", "20% polyester", "Gender-Neutral"],
+      variants: [
+        {
+          variantId: 2234,
+          variantColor: "green",
+          variantImage: "./assets/vmSocks-green-onWhite.jpg",
+          variantQuantity: 10,
+        },
+        {
+          variantId: 2235,
+          variantColor: "blue",
+          variantImage: "./assets/vmSocks-blue-onWhite.jpg",
+          variantQuantity: 0,
+        },
+      ],
+      reviews: [],
+      sizes: [
+        {
+          sizesId: 2235,
+          size: "small",
+        },
+        {
+          sizesId: 2236,
+          size: "medium",
+        },
+        {
+          sizesId: 2237,
+          size: "large",
+        },
+      ],
+
       
     };
   },
+  // KEEP METHODS AND COMPUTATIONS SEPARATE!
+  methods: {
+    // increase cart by one
+    addToCart() {
+      this.$emit("add-to-cart", this.variants[this.selectedVariant].variantId);
+      console.log(this.variants[this.selectedVariant].variantId);
+    },
+    removeFromCart() {
+      this.$emit(
+        "remove-from-cart",
+        this.variants[this.selectedVariant].variantId
+      );
+    },
+    // hover over color updates color of product
+    updateProduct(index) {
+      this.selectedVariant = index;
+      console.log(index);
+    },
+  },
+  computed: {
+    title() {
+      return this.brand + " " + this.product;
+    },
+    image() {
+      return this.variants[this.selectedVariant].variantImage;
+    },
+    inStock() {
+      return this.variants[this.selectedVariant].variantQuantity;
+    },
+
+    shipping() {
+      if (this.premium) {
+        return " FREE";
+      }
+      return "$2.99";
+    },
+  },
+  mounted() {
+    eventBus.$on("review-submitted", (productReview) => {
+      this.reviews.push(productReview);
+    });
+  },
 });
 
-// Product Review
+// PRODUCT REVIEW
 Vue.component("product-review", {
   template: `
   
@@ -152,163 +228,79 @@ Vue.component("product-review", {
   },
 });
 
-// VUE COMPONENT
-Vue.component("product", {
+//PRODUCT TABS COMPONENT
+Vue.component("product-tabs", {
   props: {
     premium: {
       type: Boolean,
       required: true,
     },
+    reviews: {
+      type: Array,
+      required: true,
+    },
+    details: {
+      type: Array,
+      required: true,
+    },
   },
-
-  // TEMPLATE LITERAL
   template: `
-    <div class="product">
-      <div class="product-image">
-        <a :href="image_link"><img :src="image" :alt="description" /></a>
-      </div>
+    <div class="tabsMargins"> 
 
-      <!-- Product Title and Stock -->
+    <span class="tab"
+      :class="{ activeTab: selectedTab === tab}"
+      v-for="(tab, index) in tabs"
+      :key="index"
+      @click="selectedTab = tab">
+        {{ tab }}         
+    </span>
 
-      <div class="product-info">
-
-        <p> {{ sale }} </p>
-
-        <h1>{{ title }}</h1>
-
-
-        <p v-if="inStock"> In Stock </p>
-        <p v-else :class="{outOfStock: !inStock }"> Out of Stock </p>
-
-        <p> User is Premium: {{ premium }}</p>
-        <p> Shipping: {{ shipping }} </p>
-
-
-
-        <!-- Color Choice Boxes -->
-
-        <div v-for="(variant, index) in variants" 
-          :key="variant.variantId" class="color-box cursorHover"
-          :style="{ backgroundColor: variant.variantColor }" @mouseover="updateProduct(index)">
-
-        </div>
-
-        <!-- BUTTON + LISTENER -->
-
-        <button @click="removeFromCart" style="background-color: red;"> Remove </button>
-        <button @click="addToCart" :disabled="!inStock" :class="{disabledButton: !inStock }"> Add to Cart </button>
-
-      
-        <product-tabs :reviews="reviews" :details="details"></product-tabs>
-        
-
-        
-
-      </div>
+    <div v-show="selectedTab === 'Reviews'">
+    <h2> Reviews </h2>
+    <p v-if="!reviews.length"> There are no reviews yet. </p>
+      <ul v-else>
+        <li v-for="(review, index) in reviews" :key="index"> 
+        <p> User: {{ review.name }}</p>
+        <p>Rating: {{ review.rating }} Stars </p>
+        <p>{{ review.review }}</p>
+        <p> Recommended: {{ review.recommend }}</p>
+        </li>
+      </ul>
     </div>
-    `,
-  // ADD DATA AS AN OBJECT(FUNCTION)
-  data() {
-    // MUST RETURN SOMETHING TO THE COMPONENT TO RENDER
-    return {
-      brand: "Vue Mastery",
-      product: "Socks",
-      description: "Green Socks",
-      selectedVariant: 0,
-      image_link:
-        "https://www.vuemastery.com/images/challenges/vmSocks-green-onWhite.jpg",
-      inventory: 90,
-      details: ["80% cotton", "20% polyester", "Gender-Neutral"],
-      variants: [
-        {
-          variantId: 2234,
-          variantColor: "green",
-          variantImage: "./assets/vmSocks-green-onWhite.jpg",
-          variantQuantity: 10,
-        },
-        {
-          variantId: 2235,
-          variantColor: "blue",
-          variantImage: "./assets/vmSocks-blue-onWhite.jpg",
-          variantQuantity: 0,
-        },
-      ],
-      reviews: [],
-      sizes: [
-        {
-          sizesId: 2235,
-          size: "small",
-        },
-        {
-          sizesId: 2236,
-          size: "medium",
-        },
-        {
-          sizesId: 2237,
-          size: "large",
-        },
-      ],
 
-      onSale: true,
+    <ul v-show="selectedTab === 'Product Details'">
+    <li v-for="detail in details"> {{ detail }} </li>
+    </ul>
+
+    <div v-show="selectedTab === 'Shipping'" :premium="premium"> 
+      <h4 class="shippingStyle"> Shipping:  {{ shipping }} </h4>
+    </div>   
+
+    <product-review v-show="selectedTab === 'Make a Review'"> </product-review> 
+
+    </div>
+  `,
+  data() {
+    return {
+      tabs: ["Reviews", "Make a Review", "Shipping", "Product Details"],
+      selectedTab: "Reviews",
     };
   },
-  // KEEP METHODS AND COMPUTATIONS SEPARATE!
-  methods: {
-    // increase cart by one
-    addToCart() {
-      this.$emit("add-to-cart", this.variants[this.selectedVariant].variantId);
-      console.log(this.variants[this.selectedVariant].variantId);
-    },
-    removeFromCart() {
-      this.$emit(
-        "remove-from-cart",
-        this.variants[this.selectedVariant].variantId
-      );
-    },
-    // hover over color updates color of product
-    updateProduct(index) {
-      this.selectedVariant = index;
-      console.log(index);
-    },
-   
-  },
   computed: {
-    title() {
-      return this.brand + " " + this.product;
-    },
-    image() {
-      return this.variants[this.selectedVariant].variantImage;
-    },
-    inStock() {
-      return this.variants[this.selectedVariant].variantQuantity;
-    },
-    sale() {
-      if (this.onSale) {
-        return this.brand + " " + this.product + " is on sale!";
-      } else {
-        return this.brand + " " + this.product + " is not on sale";
-      }
-    },
     shipping() {
       if (this.premium) {
         return " Free";
       }
       return "$2.99";
-    }
+    },
   },
-  mounted(){
-    eventBus.$on('review-submitted', productReview => {
-      this.reviews.push(productReview)
-    })
-
-  }
 });
 
 // APP INSTANCE
 var app = new Vue({
   el: "#app",
   data: {
-    premium: true,
+    premium: false,
     cart: [],
   },
   methods: {

@@ -79,6 +79,7 @@ body {
   }
 
   .tab {
+    padding-top: 20px;
     margin-left: 20px;
     cursor: pointer;
   }
@@ -98,4 +99,11 @@ body {
 
   .centeredText{
     text-align: center;
+  }
+  .tabsMargins{
+    margin-top: 50px;
+  }
+  .shippingStyle{
+    font-size: 1.2em;
+    
   }
